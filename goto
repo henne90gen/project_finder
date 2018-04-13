@@ -1,0 +1,58 @@
+#!/usr/bin/env python
+# PYTHON_ARGCOMPLETE_OK
+
+import argparse
+import os
+
+import argcomplete as argcomplete
+
+folder_blacklist = ["node_modules", ".metadata", "nexus-3.7.1-02", "venv", "golang.org"]
+projects = {}
+
+
+def search_for_git_folders(path):
+    result = {}
+    directories = os.listdir(path)
+
+    if ".git" in directories or ".svn" in directories:
+        project_name = os.path.split(path)[-1]
+        result[project_name] = path
+        return result
+
+    for dir_name in directories:
+        directory = os.path.join(path, dir_name)
+        if os.path.isdir(directory) and dir_name not in folder_blacklist:
+            result.update(search_for_git_folders(directory))
+
+    return result
+
+
+def ProjectDirectoryCompleter(prefix, **kwargs):
+    return list(filter(lambda key: key.startswith(prefix), projects.keys()))
+
+
+def main():
+    global projects
+    script_path = os.path.split(os.path.dirname(os.path.realpath(__file__)))[-1]
+    workspace_file = os.path.join(script_path, "workspace.txt")
+    if not os.path.isfile(workspace_file):
+        msg = "Could not find workspace.txt"
+        print(msg)
+        argcomplete.warn(msg)
+        os._exit(1)
+    with open(workspace_file, 'r') as f:
+        workspace_path = f.readlines()[0]
+    projects.update(search_for_git_folders(workspace_path))
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("project").completer = ProjectDirectoryCompleter
+    argcomplete.autocomplete(parser)
+    args = parser.parse_args()
+
+    path = projects[args.project]
+    os.chdir(path)
+    os.system("/bin/bash")
+
+
+if __name__ == '__main__':
+    main()
