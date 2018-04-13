@@ -3,11 +3,11 @@
 
 import argparse
 import os
+import sys
 
 import argcomplete as argcomplete
 
 folder_blacklist = ["node_modules", ".metadata", "nexus-3.7.1-02", "venv", "golang.org"]
-projects = {}
 
 
 def search_for_git_folders(path):
@@ -27,22 +27,22 @@ def search_for_git_folders(path):
     return result
 
 
-def ProjectDirectoryCompleter(prefix, **kwargs):
-    return list(filter(lambda key: key.startswith(prefix), projects.keys()))
-
-
 def main():
-    global projects
-    script_path = os.path.split(os.path.dirname(os.path.realpath(__file__)))[-1]
+    projects = {}
+
+    script_path = os.path.dirname(os.path.realpath(__file__))
     workspace_file = os.path.join(script_path, "workspace.txt")
-    if not os.path.isfile(workspace_file):
-        msg = "Could not find workspace.txt"
-        print(msg)
-        argcomplete.warn(msg)
-        os._exit(1)
-    with open(workspace_file, 'r') as f:
-        workspace_path = f.readlines()[0]
-    projects.update(search_for_git_folders(workspace_path))
+    if os.path.isfile(workspace_file):
+        with open(workspace_file, 'r') as f:
+            workspace_path = f.readlines()[0]
+        projects.update(search_for_git_folders(workspace_path))
+    else:
+        pass
+
+    def ProjectDirectoryCompleter(prefix, **kwargs):
+        if len(projects) == 0:
+            argcomplete.warn("No projects found. (Did you create workspace.txt?)")
+        return list(filter(lambda key: key.startswith(prefix), projects.keys()))
 
     parser = argparse.ArgumentParser()
     parser.add_argument("project").completer = ProjectDirectoryCompleter
