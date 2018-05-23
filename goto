@@ -14,7 +14,7 @@ def search_for_git_folders(path):
     result = {}
     directories = os.listdir(path)
 
-    if ".git" in directories or ".svn" in directories:
+    if (".git" in directories) or (".svn" in directories):
         project_name = os.path.split(path)[-1]
         result[project_name] = path
         return result
@@ -50,8 +50,7 @@ def main():
     args = parser.parse_args()
 
     path = projects[args.project]
-    os.chdir(path)
-    os.system("/bin/bash")
+    os.system(f"gnome-terminal --working-directory=\"{path}\"")
 
 
 if __name__ == '__main__':
