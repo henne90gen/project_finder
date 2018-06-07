@@ -1,3 +1,5 @@
 .idea/
+.vscode/
 venv/
 workspace.txt
+projects_cache.bin

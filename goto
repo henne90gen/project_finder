@@ -2,6 +2,7 @@
 # PYTHON_ARGCOMPLETE_OK
 
 import argparse
+import pickle
 import os
 import sys
 
@@ -26,18 +27,33 @@ def search_for_git_folders(path):
 
     return result
 
-
-def main():
-    projects = {}
-
+def load_projects():
     script_path = os.path.dirname(os.path.realpath(__file__))
+
+    projects_cache = os.path.join(script_path, "projects_cache.bin")
+    if os.path.isfile(projects_cache):
+        try:
+            with open(projects_cache, 'rb') as f:
+                return pickle.load(f)
+        except:
+            os.remove(projects_cache)
+
     workspace_file = os.path.join(script_path, "workspace.txt")
     if os.path.isfile(workspace_file):
         with open(workspace_file, 'r') as f:
             workspace_path = f.readlines()[0]
-        projects.update(search_for_git_folders(workspace_path))
+
+        projects = search_for_git_folders(workspace_path)
+        with open(projects_cache, 'wb+') as f:
+            pickle.dump(projects, f)
+
+        return projects
     else:
-        pass
+        print("Could not find workspace.txt.")
+        exit(1)
+
+def main():
+    projects = load_projects()
 
     def ProjectDirectoryCompleter(prefix, **kwargs):
         if len(projects) == 0:
