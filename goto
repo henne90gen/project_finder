@@ -8,10 +8,11 @@ import sys
 
 import argcomplete as argcomplete
 
-folder_blacklist = ["node_modules", ".metadata", "nexus-3.7.1-02", "venv", "golang.org"]
+folder_blacklist = ["node_modules", ".metadata",
+                    "nexus-3.7.1-02", "venv", "golang.org"]
 
 
-def search_for_git_folders(path):
+def search_for_workspace_folders(path):
     result = {}
     directories = os.listdir(path)
 
@@ -23,9 +24,10 @@ def search_for_git_folders(path):
     for dir_name in directories:
         directory = os.path.join(path, dir_name)
         if os.path.isdir(directory) and dir_name not in folder_blacklist:
-            result.update(search_for_git_folders(directory))
+            result.update(search_for_workspace_folders(directory))
 
     return result
+
 
 def load_projects():
     script_path = os.path.dirname(os.path.realpath(__file__))
@@ -43,7 +45,7 @@ def load_projects():
         with open(workspace_file, 'r') as f:
             workspace_path = f.readlines()[0]
 
-        projects = search_for_git_folders(workspace_path)
+        projects = search_for_workspace_folders(workspace_path)
         with open(projects_cache, 'wb+') as f:
             pickle.dump(projects, f)
 
@@ -52,13 +54,15 @@ def load_projects():
         print("Could not find workspace.txt.")
         exit(1)
 
+
+def ProjectDirectoryCompleter(prefix, **kwargs):
+    if len(projects) == 0:
+        argcomplete.warn("No projects found. (Did you create workspace.txt?)")
+    return list(filter(lambda key: key.startswith(prefix), projects.keys()))
+
+
 def main():
     projects = load_projects()
-
-    def ProjectDirectoryCompleter(prefix, **kwargs):
-        if len(projects) == 0:
-            argcomplete.warn("No projects found. (Did you create workspace.txt?)")
-        return list(filter(lambda key: key.startswith(prefix), projects.keys()))
 
     parser = argparse.ArgumentParser()
     parser.add_argument("project").completer = ProjectDirectoryCompleter
