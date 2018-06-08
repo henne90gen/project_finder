@@ -13,18 +13,22 @@ folder_blacklist = ["node_modules", ".metadata",
 
 
 def search_for_workspace_folders(path):
-    result = {}
     directories = os.listdir(path)
 
     if (".git" in directories) or (".svn" in directories):
         project_name = os.path.split(path)[-1]
-        result[project_name] = path
-        return result
+        return {project_name: [path]}
 
+    result = {}
     for dir_name in directories:
         directory = os.path.join(path, dir_name)
         if os.path.isdir(directory) and dir_name not in folder_blacklist:
-            result.update(search_for_workspace_folders(directory))
+            new_projects = search_for_workspace_folders(directory)
+            for key in new_projects:
+                if key in result:
+                    result[key].extend(new_projects[key])
+                else:
+                    result[key] = new_projects[key]
 
     return result
 
@@ -58,20 +62,31 @@ def load_projects():
 def main():
     projects = load_projects()
 
-    # defining this in here allows access to 'project'
+    # defining this in here allows access to 'projects'
     def ProjectDirectoryCompleter(prefix, **kwargs):
         if len(projects) == 0:
-            argcomplete.warn("No projects found. (Did you create workspace.txt?)")
+            argcomplete.warn(
+                "No projects found. (Did you create workspace.txt?)")
         return list(filter(lambda key: key.startswith(prefix), projects.keys()))
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("project").completer = ProjectDirectoryCompleter
+    parser.add_argument("project", nargs='+').completer = ProjectDirectoryCompleter
     argcomplete.autocomplete(parser)
     args = parser.parse_args()
 
-    path = projects[args.project]
-    os.system(f"gnome-terminal --working-directory=\"{path}\"")
+    paths = projects[args.project[0]]
 
+    def open_terminal(index: int):
+        os.system(f"gnome-terminal --working-directory=\"{paths[index]}\"")
+
+    if len(paths) == 1:
+        open_terminal(0)
+    elif len(args.project) == 2:
+        open_terminal(int(args.project[1]))
+    else:
+        for index, path in enumerate(paths):
+            print(f"{index}: {path}")
+        print("Please select a directory to go to by adding the number at the end.")
 
 if __name__ == '__main__':
     main()
