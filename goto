@@ -55,14 +55,14 @@ def load_projects():
         exit(1)
 
 
-def ProjectDirectoryCompleter(prefix, **kwargs):
-    if len(projects) == 0:
-        argcomplete.warn("No projects found. (Did you create workspace.txt?)")
-    return list(filter(lambda key: key.startswith(prefix), projects.keys()))
-
-
 def main():
     projects = load_projects()
+
+    # defining this in here allows access to 'project'
+    def ProjectDirectoryCompleter(prefix, **kwargs):
+        if len(projects) == 0:
+            argcomplete.warn("No projects found. (Did you create workspace.txt?)")
+        return list(filter(lambda key: key.startswith(prefix), projects.keys()))
 
     parser = argparse.ArgumentParser()
     parser.add_argument("project").completer = ProjectDirectoryCompleter
