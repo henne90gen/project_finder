@@ -33,11 +33,11 @@ def search_for_workspace_folders(path):
     return result
 
 
-def load_projects():
+def load_projects(update_cache: bool=False):
     script_path = os.path.dirname(os.path.realpath(__file__))
 
     projects_cache = os.path.join(script_path, "projects_cache.bin")
-    if os.path.isfile(projects_cache):
+    if os.path.isfile(projects_cache) and not update_cache:
         try:
             with open(projects_cache, 'rb') as f:
                 return pickle.load(f)
@@ -59,18 +59,30 @@ def load_projects():
         exit(1)
 
 
-def main():
-    projects = load_projects()
-
-    # defining this in here allows access to 'projects'
-    def ProjectDirectoryCompleter(prefix, **kwargs):
+def ProjectDirectoryCompleter(projects: dict):
+    def wrapped_func(prefix, **kwargs):
         if len(projects) == 0:
             argcomplete.warn(
                 "No projects found. (Did you create workspace.txt?)")
-        return list(filter(lambda key: key.startswith(prefix), projects.keys()))
+
+        def filter_projects(p: dict):
+            return list(filter(lambda key: key.startswith(prefix), p.keys()))
+
+        result = filter_projects(projects)
+        if len(result) == 0:
+            loaded_projects = load_projects(True)
+            result = filter_projects(loaded_projects)
+        return result
+
+    return wrapped_func
+
+
+def main():
+    projects = load_projects()
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("project", nargs='+').completer = ProjectDirectoryCompleter
+    parser.add_argument(
+        "project", nargs='+').completer = ProjectDirectoryCompleter(projects)
     argcomplete.autocomplete(parser)
     args = parser.parse_args()
 
@@ -87,6 +99,7 @@ def main():
         for index, path in enumerate(paths):
             print(f"{index}: {path}")
         print("Please select a directory to go to by adding the number at the end.")
+
 
 if __name__ == '__main__':
     main()
