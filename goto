@@ -5,7 +5,7 @@ import argparse
 import pickle
 import os
 import sys
-
+import signal
 import argcomplete as argcomplete
 
 folder_blacklist = ["node_modules", ".metadata",
@@ -99,7 +99,8 @@ def main():
         for index, path in enumerate(paths):
             print(f"{index}: {path}")
         print("Please select a directory to go to by adding the number at the end.")
-
+    
+    os.kill(os.getppid(), signal.SIGKILL)
 
 if __name__ == '__main__':
     main()
