@@ -86,7 +86,12 @@ def main():
     argcomplete.autocomplete(parser)
     args = parser.parse_args()
 
-    paths = projects[args.project[0]]
+    project_name = args.project[0]
+    if project_name in projects:
+        paths = projects[project_name]
+    else:
+        print(f"Could not find any project with name '{project_name}'")
+        return
 
     def open_terminal(index: int):
         os.system(f"gnome-terminal --working-directory=\"{paths[index]}\"")
