@@ -1,6 +1,6 @@
 .idea/
 .vscode/
 __pycache__/
-env/
+bin/
 workspace.txt
 projects_cache.bin
