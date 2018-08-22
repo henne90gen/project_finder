@@ -1,10 +1,13 @@
-#!/bin/python
+#!/usr/bin/env python
 # PYTHON_ARGCOMPLETE_OK
 
 import argparse
 import pickle
 import os
 import sys
+
+#print(sys.version)
+
 import signal
 import argcomplete
 
